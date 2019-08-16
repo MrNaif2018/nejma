@@ -10,7 +10,6 @@ class WebSocketEndpoint(BaseWebSocketEndpoint):
     async def on_connect(self, websocket, **kwargs):
         await super().on_connect(websocket, **kwargs)
 
-        self.channel_layer = channel_layer
         if self.encoding == "json":
             send_ = websocket.send_json
         elif self.encoding == "text":
@@ -19,8 +18,8 @@ class WebSocketEndpoint(BaseWebSocketEndpoint):
             send_ = websocket.send_bytes
         else:
             send_ = websocket.send
-
-        self.channel = Channel(send=send_)
+        self.channel = Channel()
+        self.channel_layer.send = send_
 
     async def on_disconnect(self, websocket, close_code):
-        self.channel_layer.remove_channel(self.channel)
+        await self.channel_layer.remove_channel(self.channel)

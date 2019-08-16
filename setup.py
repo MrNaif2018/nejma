@@ -6,7 +6,9 @@ import setuptools
 
 def get_version(package):
     with open(os.path.join(package, "__version__.py")) as f:
-        return re.search("__version__ = ['\"]([^'\"]+)['\"]", f.read()).group(1)
+        return re.search(
+            "__version__ = ['\"]([^'\"]+)['\"]",
+            f.read()).group(1)
 
 
 def get_readme():
@@ -26,6 +28,7 @@ setuptools.setup(
     author_email="abacidtaoufik@gmail.com",
     packages=setuptools.find_packages(),
     python_requires=">=3.6",
+    extras_require={"redis": ["aioredis"]},
     classifiers=[
         "Environment :: Web Environment",
         "Intended Audience :: Developers",

@@ -5,6 +5,8 @@
 coverage.xml
 venv/
 env/
+.mypy_cache
+.vscode
 
 build
 dist/
