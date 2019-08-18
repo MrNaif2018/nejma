@@ -45,7 +45,7 @@ Add groups, channels or send messages
 
 ```python
 async def on_receive(self, websocket, data):
-    self.channel_layer.add(group, self.channel)
+    await self.channel_layer.add(group, self.channel)
 
     await self.channel_layer.group_send(group, "Welcome !")
 ```
@@ -54,7 +54,7 @@ Finnaly, remove the channel once the connection is closed
 
 ```python
 async def on_disconnect(self, websocket, close_code):
-    self.channel_layer.remove_channel(self.channel)
+    await self.channel_layer.remove_channel(self.channel)
 ```
 
 
@@ -78,7 +78,7 @@ class Chat(WebSocketEndpoint):
         if message.strip():
             group = f"group_{room_id}"
 
-            self.channel_layer.add(group, self.channel)
+            await self.channel_layer.add(group, self.channel)
 
             payload = {
                 "username": username,
@@ -92,14 +92,14 @@ class Chat(WebSocketEndpoint):
 
 The `ChannelLayer` class provided by `nejma` exposes the following methods :
 
-`add(group, channel, send=None)`
+`async add(group, channel, send=None)`
 
 Adds a channel to a giving group.
 
 * send : method to send messages to a channel
 
 ```python
-self.channel_layer.add(group, self.channel, send=websocket.send)
+await self.channel_layer.add(group, self.channel, send=websocket.send)
 ```
 
 `async group_send(group, "Welcome !")`
@@ -110,26 +110,26 @@ Sends a message to a group of channels
 await self.channel_layer.group_send(group, "Welcome !")
 ```
 
-`remove(group, channel)`
+`async remove(group, channel)`
 
 Removes a channel from a given group
 
 ```python
-self.channel_layer.remove(group, self.channel)
+await self.channel_layer.remove(group, self.channel)
 ```
 
-`remove_channel(channel)`
+`async remove_channel(channel)`
 
 Removes a channel from all the groups
 
 ```python
-self.channel_layer.remove_channel(self.channel)
+await self.channel_layer.remove_channel(self.channel)
 ```
 
-`flush()`
+`async flush()`
 
 Reset all the groups
 
 ```python
-self.channel_layer.flush()
+await self.channel_layer.flush()
 ```

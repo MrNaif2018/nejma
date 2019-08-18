@@ -6,6 +6,7 @@ from nejma.layers import Channel, channel_layer
 
 class WebSocketEndpoint(BaseWebSocketEndpoint):
     encoding = "json"
+    channel_layer = channel_layer
 
     async def on_connect(self, websocket, **kwargs):
         await super().on_connect(websocket, **kwargs)
@@ -18,7 +19,7 @@ class WebSocketEndpoint(BaseWebSocketEndpoint):
             send_ = websocket.send_bytes
         else:
             send_ = websocket.send
-        self.channel = Channel()
+        self.channel = Channel(send=send_)
         self.channel_layer.send = send_
 
     async def on_disconnect(self, websocket, close_code):

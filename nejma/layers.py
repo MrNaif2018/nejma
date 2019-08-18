@@ -43,7 +43,7 @@ class ChannelLayer:
 
         self.groups = {}
 
-    def add(self, group_name, channel, send=None):
+    async def add(self, group_name, channel, send=None):
         assert self.validate_name(group_name), "Invalid group name"
         if isinstance(channel, (str, bytes)):
             channel = Channel(name=channel, send=send)
@@ -52,20 +52,20 @@ class ChannelLayer:
         # lookup
         self.groups[group_name][channel] = 1
 
-    def remove(self, group_name, channel):
+    async def remove(self, group_name, channel):
         if group_name in self.groups:
             if channel in self.groups[group_name]:
                 del self.groups[group_name][channel]
 
-    def flush(self):
+    async def flush(self):
         self.groups = {}
 
     async def group_send(self, group, payload):
-        self.clean_expired()
+        await self.clean_expired()
         for channel in self.groups.get(group, {}):
             await channel.send(payload)
 
-    def remove_channel(self, channel):
+    async def remove_channel(self, channel):
         for group in self.groups:
             if channel in self.groups[group]:
                 del self.groups[group][channel]
@@ -78,7 +78,7 @@ class ChannelLayer:
             + "only alphanumerics and underscores are accepted"
         )
 
-    def clean_expired(self):
+    async def clean_expired(self):
         for group in self.groups:
             # Can't change dict size during iteration
             for channel in list(self.groups.get(group, {})):
@@ -100,7 +100,7 @@ class RedisLayer(ChannelLayer):
             f"{self.prefix}_") else f"{group}"
 
     async def _initialize(self):
-        self.redis: aioredis.Redis = await aioredis.create_redis(self.redis_host)
+        self.redis: aioredis.Redis = await aioredis.create_redis_pool(self.redis_host)
         self.initialized = True
 
     ### add/remove interface ###
@@ -119,7 +119,7 @@ class RedisLayer(ChannelLayer):
             await self._initialize()
         if isinstance(channel, Channel):
             channel = channel.name
-        cur, keys = await self.redis.scan(match=self.group_prefix("*"))
+        _, keys = await self.redis.scan(match=self.group_prefix("*"))
         for key in keys:
             await self.redis.hdel(key, channel)
 
@@ -129,13 +129,20 @@ class RedisLayer(ChannelLayer):
         group_name = self.group_prefix(group_name)
         await self.redis.hdel(group_name, channel)
 
-    # send interface
+    async def flush(self):
+        if not self.initialized:
+            await self._initialize()
+        _, keys = await self.redis.scan(match=self.group_prefix("*"))
+        for key in keys:
+            await self.redis.delete(key)
+
+    ### send interface ###
 
     async def group_send(self, group, payload):
         if not self.initialized:
             await self._initialize()
         group_name = self.group_prefix(group)
-        for i in await self.redis.hgetall(group_name):
+        for _ in await self.redis.hgetall(group_name):
             await Channel(send=self.send).send(payload)
 
 
