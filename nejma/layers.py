@@ -96,6 +96,7 @@ class RedisLayer(ChannelLayer):
     ### utility functions ###
 
     def group_prefix(self, group):
+        group = str(group)
         return f"{self.prefix}_{group}" if not group.startswith(
             f"{self.prefix}_") else f"{group}"
 
