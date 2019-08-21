@@ -88,6 +88,8 @@ class ChannelLayer:
 
 class RedisLayer(ChannelLayer):
     def __init__(self, redis_host="redis://localhost", prefix="group"):
+        if not aioredis:
+            raise AssertionError("Redis layer support not installed. Install it with pip install nejma[redis]")
         self.initialized = False
         self.send = None
         self.redis_host = redis_host
@@ -120,8 +122,7 @@ class RedisLayer(ChannelLayer):
             await self._initialize()
         if isinstance(channel, Channel):
             channel = channel.name
-        _, keys = await self.redis.scan(match=self.group_prefix("*"))
-        for key in keys:
+        async for key in self.redis.iscan(match=self.group_prefix("*")):
             await self.redis.hdel(key, channel)
 
     async def remove(self, group_name, channel):
@@ -133,8 +134,7 @@ class RedisLayer(ChannelLayer):
     async def flush(self):
         if not self.initialized:
             await self._initialize()
-        _, keys = await self.redis.scan(match=self.group_prefix("*"))
-        for key in keys:
+        async for key in self.redis.iscan(match=self.group_prefix("*")):
             await self.redis.delete(key)
 
     ### send interface ###
