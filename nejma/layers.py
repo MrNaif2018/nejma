@@ -111,7 +111,6 @@ class RedisLayer(ChannelLayer):
     async def add(self, group_name, channel, send=None):
         if not self.initialized:
             await self._initialize()
-        assert self.validate_name(group_name), "Invalid group name"
         if isinstance(channel, Channel):
             channel = channel.name
         group_name = self.group_prefix(group_name)
